@@ -1,8 +1,6 @@
 name: Build Tools (Android & Desktop)
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -13,10 +11,16 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Install Cross-Compilers
+    - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi build-essential
+        sudo apt-get install -y build-essential
+
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r29
+        add-to-path: true
 
     - name: Prepare Output Directories
       run: |
@@ -26,8 +30,10 @@ jobs:
 
     - name: Compile for Android ARM64
       run: |
-        CC="aarch64-linux-gnu-gcc"
-        FLAGS="-static -O3 -Wall -Wextra"
+        NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
+        CC="$NDK_BIN/clang"
+        STRIP="$NDK_BIN/llvm-strip"
+        FLAGS="--target=aarch64-linux-android21 -static -O3 -Wall -Wextra"
         OUT="build/android-arm64"
 
         $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
@@ -36,12 +42,14 @@ jobs:
         $CC $FLAGS -o $OUT/callbench callbench/callbench.c
         $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
 
-        aarch64-linux-gnu-strip $OUT/*
+        $STRIP $OUT/*
 
     - name: Compile for Android ARM32
       run: |
-        CC="arm-linux-gnueabi-gcc"
-        FLAGS="-static -O3 -Wall -Wextra"
+        NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
+        CC="$NDK_BIN/clang"
+        STRIP="$NDK_BIN/llvm-strip"
+        FLAGS="--target=armv7a-linux-androideabi21 -static -O3 -Wall -Wextra"
         OUT="build/android-arm32"
 
         $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
@@ -50,11 +58,12 @@ jobs:
         $CC $FLAGS -o $OUT/callbench callbench/callbench.c
         $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
 
-        arm-linux-gnueabi-strip $OUT/*
+        $STRIP $OUT/*
 
     - name: Compile for Desktop Linux
       run: |
         CC="gcc"
+        STRIP="strip"
         FLAGS="-O3 -Wall -Wextra" 
         OUT="build/linux-desktop"
 
@@ -64,7 +73,7 @@ jobs:
         $CC $FLAGS -o $OUT/callbench callbench/callbench.c
         $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
 
-        strip $OUT/*
+        $STRIP $OUT/*
 
     - name: Generate Checksums
       run: |
