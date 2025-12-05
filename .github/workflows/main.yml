@@ -1,0 +1,95 @@
+name: Build Tools (Android & Desktop)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-all:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install Cross-Compilers
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi build-essential
+
+    - name: Prepare Output Directories
+      run: |
+        mkdir -p build/android-arm64
+        mkdir -p build/android-arm32
+        mkdir -p build/linux-desktop
+
+    - name: Compile for Android ARM64
+      run: |
+        CC="aarch64-linux-gnu-gcc"
+        FLAGS="-static -O3 -Wall -Wextra"
+        OUT="build/android-arm64"
+
+        $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
+        $CC $FLAGS -pthread -o $OUT/pipe-latency pipe-latency/pipe-latency.c
+        $CC $FLAGS -o $OUT/pipebench pipebench/pipebench.c
+        $CC $FLAGS -o $OUT/callbench callbench/callbench.c
+        $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
+
+        aarch64-linux-gnu-strip $OUT/*
+
+    - name: Compile for Android ARM32
+      run: |
+        CC="arm-linux-gnueabi-gcc"
+        FLAGS="-static -O3 -Wall -Wextra"
+        OUT="build/android-arm32"
+
+        $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
+        $CC $FLAGS -pthread -o $OUT/pipe-latency pipe-latency/pipe-latency.c
+        $CC $FLAGS -o $OUT/pipebench pipebench/pipebench.c
+        $CC $FLAGS -o $OUT/callbench callbench/callbench.c
+        $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
+
+        arm-linux-gnueabi-strip $OUT/*
+
+    - name: Compile for Desktop Linux
+      run: |
+        CC="gcc"
+        FLAGS="-O3 -Wall -Wextra" 
+        OUT="build/linux-desktop"
+
+        $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
+        $CC $FLAGS -pthread -o $OUT/pipe-latency pipe-latency/pipe-latency.c
+        $CC $FLAGS -o $OUT/pipebench pipebench/pipebench.c
+        $CC $FLAGS -o $OUT/callbench callbench/callbench.c
+        $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
+
+        strip $OUT/*
+
+    - name: Generate Checksums
+      run: |
+        cd build
+        sha256sum android-arm64/* > android-arm64/SHA256SUMS.txt
+        sha256sum android-arm32/* > android-arm32/SHA256SUMS.txt
+        sha256sum linux-desktop/* > linux-desktop/SHA256SUMS.txt
+
+    - name: Upload Android ARM64 Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tools-android-arm64
+        path: build/android-arm64/*
+        retention-days: 5
+
+    - name: Upload Android ARM32 Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tools-android-arm32
+        path: build/android-arm32/*
+        retention-days: 5
+
+    - name: Upload Linux Desktop Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tools-linux-desktop
+        path: build/linux-desktop/*
+        retention-days: 5
