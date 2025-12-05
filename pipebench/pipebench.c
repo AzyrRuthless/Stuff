@@ -7,26 +7,28 @@
  * Measures the speed of stdin/stdout communication.
  *
  * TODO:
- *    -  Variable update time  (now just updates once a second)
+ * -  Variable update time  (now just updates once a second)
  */
 /*
- *  Copyright (C) 2002 Thomas Habets <thomas@habets.se>
+ * Copyright (C) 2002 Thomas Habets <thomas@habets.se>
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public
- *  License as published by the Free Software Foundation; either
- *  version 2 of the License, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  General Public License for more details.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+ * You should have received a copy of the GNU General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 #include <stdio.h>
+#include <stdlib.h> /* Added for malloc, free, atoi */
+#include <string.h> /* Added for strcpy, strlen */
 #include <unistd.h>
 #include <time.h>
 #include <signal.h>
@@ -47,6 +49,7 @@ static volatile int done = 0;
 
 static void sigint(int n)
 {
+	(void)n;
 	done = 1;
 }
 
@@ -55,14 +58,14 @@ static void sigint(int n)
  * Two decimal places.
  *
  * In:  64 bit int, a storage buffer, size of buffer, and unit base
- *      unit base squared must fit in unsigned long.
+ * unit base squared must fit in unsigned long.
  *
  * Out: buffer is changed and a pointer is returned to it.
  *
  * NOTE: Bits are lost if
- *       1) Input > (2^64 / 100)
- *    *and*
- *       2) nunit < 100       (which it should never be)
+ * 1) Input > (2^64 / 100)
+ * *and*
+ * 2) nunit < 100       (which it should never be)
  */
 static char *unitify(u_int64_t _in, char *buf, int max, unsigned long nunit,
 		     int dounit)
@@ -96,7 +99,7 @@ static char *unitify(u_int64_t _in, char *buf, int max, unsigned long nunit,
 		/* Ha ha ha ha ha ha, oh my god... Yeah I wish I had the
 		 * problem this part fixes.
 		 */
-		while (e && (e >= (sizeof(units)/sizeof(char*)))) {
+		while (e && (e >= (int)(sizeof(units)/sizeof(char*)))) {
 		e--;
 		in*=nunit;
 		}
@@ -126,10 +129,10 @@ static char *time_diff(struct timeval *start, struct timeval *end, char *buf,
 	}
 	buf[max-1] = 0;
 	snprintf(buf,max,"%.2dh%.2dm%.2d.%.2ds",
-		 diff.tv_sec / 3600,
-		 (diff.tv_sec / 60) % 60,
-		 diff.tv_sec % 60,
-		 diff.tv_usec/10000);
+		 (int)(diff.tv_sec / 3600),
+		 (int)((diff.tv_sec / 60) % 60),
+		 (int)(diff.tv_sec % 60),
+		 (int)(diff.tv_usec/10000));
 	return buf;
 }
 
