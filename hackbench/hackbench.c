@@ -62,7 +62,14 @@ static unsigned int total_children = 0;
 static volatile sig_atomic_t signal_caught = 0;
 static jmp_buf jmpbuf;
 
-/* Helper to handle fatal errors */
+/**
+ * panic
+ *
+ * Prints an error message to stderr and exits the program.
+ * If a signal has been caught, the message is suppressed.
+ *
+ * @param msg The error message to display.
+ */
 static void panic(const char *msg) {
     if (!signal_caught) {
         fprintf(stderr, "%s: %s\n", msg, strerror(errno));
@@ -70,6 +77,11 @@ static void panic(const char *msg) {
     exit(1);
 }
 
+/**
+ * print_usage
+ *
+ * Prints the usage instructions and available options for the hackbench utility, then exits.
+ */
 static void print_usage(void) {
     printf("Usage: hackbench [options]\n"
            "Options:\n"
@@ -85,6 +97,14 @@ static void print_usage(void) {
     exit(1);
 }
 
+/**
+ * fdpair
+ *
+ * Creates a pair of file descriptors (either pipes or socketpairs).
+ * Panics if the creation fails.
+ *
+ * @param fds The array to store the two file descriptors.
+ */
 static void fdpair(int fds[2]) {
     if (use_pipes) {
         if (pipe(fds) == 0) return;
@@ -94,7 +114,14 @@ static void fdpair(int fds[2]) {
     panic("Creating fdpair");
 }
 
-/* Block until we're ready to go */
+/**
+ * ready
+ *
+ * Signals that a worker is ready and waits for the go-ahead signal.
+ *
+ * @param ready_out File descriptor to write the ready signal to.
+ * @param wakefd File descriptor to poll for the wake signal.
+ */
 static void ready(int ready_out, int wakefd) {
     char dummy = '*';
     struct pollfd pfd = { .fd = wakefd, .events = POLLIN };
@@ -108,12 +135,25 @@ static void ready(int ready_out, int wakefd) {
         panic("poll");
 }
 
-/* Reset signal handlers for workers */
+/**
+ * reset_worker_signals
+ *
+ * Resets the SIGTERM and SIGINT signal handlers to their default behavior.
+ * This is used in worker processes/threads.
+ */
 static void reset_worker_signals(void) {
     signal(SIGTERM, SIG_DFL);
     signal(SIGINT, SIG_DFL);
 }
 
+/**
+ * sender
+ *
+ * The sender worker function. It sends data packets to multiple file descriptors.
+ *
+ * @param ctx Pointer to the sender context structure.
+ * @return NULL.
+ */
 static void *sender(struct sender_context *ctx) {
     char data[datasize];
     unsigned int i, j;
@@ -135,6 +175,14 @@ static void *sender(struct sender_context *ctx) {
     return NULL;
 }
 
+/**
+ * receiver
+ *
+ * The receiver worker function. It reads data packets from a file descriptor.
+ *
+ * @param ctx Pointer to the receiver context structure.
+ * @return NULL.
+ */
 static void *receiver(struct receiver_context *ctx) {
     unsigned int i;
 
@@ -157,6 +205,16 @@ static void *receiver(struct receiver_context *ctx) {
     return NULL;
 }
 
+/**
+ * create_worker
+ *
+ * Creates a worker, which can be either a process or a thread based on the mode.
+ *
+ * @param child Pointer to the child info structure to store the ID.
+ * @param ctx The context to pass to the worker function.
+ * @param func The function to execute in the worker.
+ * @return 0 on success, -1 on failure.
+ */
 static int create_worker(childinfo_t *child, void *ctx, void *(*func)(void *)) {
     pthread_attr_t attr;
     int err;
@@ -174,6 +232,17 @@ static int create_worker(childinfo_t *child, void *ctx, void *(*func)(void *)) {
     return 0;
 }
 
+/**
+ * reap_workers
+ *
+ * Waits for all worker processes or threads to finish.
+ * Optionally sends SIGTERM to them first.
+ *
+ * @param child Array of child info structures.
+ * @param totchld Total number of children to reap.
+ * @param dokill If true, sends SIGTERM to children before waiting.
+ * @return The number of children that did not exit successfully.
+ */
 static unsigned int reap_workers(childinfo_t *child, unsigned int totchld, bool dokill) {
     unsigned int i, rc = 0;
     int status;
@@ -196,6 +265,18 @@ static unsigned int reap_workers(childinfo_t *child, unsigned int totchld, bool 
     return rc;
 }
 
+/**
+ * group
+ *
+ * Sets up a group of senders and receivers.
+ *
+ * @param child Array of child info structures.
+ * @param tab_offset The offset in the child array to start adding new children.
+ * @param num_fds Number of file descriptors per group.
+ * @param ready_out File descriptor to signal readiness.
+ * @param wakefd File descriptor to wait for wake signal.
+ * @return The number of children created (senders + receivers).
+ */
 static unsigned int group(childinfo_t *child, unsigned int tab_offset,
                           unsigned int num_fds, int ready_out, int wakefd) {
     unsigned int i;
@@ -244,6 +325,14 @@ static unsigned int group(childinfo_t *child, unsigned int tab_offset,
     return num_fds * 2;
 }
 
+/**
+ * sigcatcher
+ *
+ * Signal handler to catch interrupts and termination signals.
+ * Sets the signal caught flag and jumps back to the main loop cleanup.
+ *
+ * @param sig The signal number.
+ */
 static void sigcatcher(int sig) {
     signal_caught = 1;
     fprintf(stderr, "Signal %d caught, exiting...\n", sig);
@@ -251,10 +340,28 @@ static void sigcatcher(int sig) {
     longjmp(jmpbuf, 1);
 }
 
+/**
+ * get_mono_time
+ *
+ * Retrieves the current monotonic time.
+ * Panics on failure.
+ *
+ * @param ts Pointer to the timespec structure to store the time.
+ */
 static void get_mono_time(struct timespec *ts) {
     if (clock_gettime(CLOCK_MONOTONIC, ts) == -1) panic("clock_gettime");
 }
 
+/**
+ * main
+ *
+ * The main entry point of the hackbench utility.
+ * Parses options, sets up the benchmark groups, runs the benchmark, and prints the result.
+ *
+ * @param argc The argument count.
+ * @param argv The argument vector.
+ * @return Returns 0 on success, 1 on failure.
+ */
 int main(int argc, char *argv[]) {
     unsigned int i;
     struct timespec start, stop;

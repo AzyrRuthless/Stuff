@@ -44,26 +44,58 @@ typedef void (*bench_impl)(void);
 
 static char test_read_buf[TEST_READ_LEN];
 
+/**
+ * ts_to_ns
+ *
+ * Converts a timespec structure to nanoseconds.
+ *
+ * @param ts The timespec structure to convert.
+ * @return The total time in nanoseconds.
+ */
 static long ts_to_ns(struct timespec ts) {
     return ts.tv_nsec + (ts.tv_sec * NS_PER_SEC);
 }
 
 #ifndef NO_DIRECT_SYSCALL
+/**
+ * time_syscall_mb
+ *
+ * Microbenchmark function that invokes the clock_gettime syscall directly.
+ * Used to measure the overhead of a direct syscall without vDSO.
+ */
 static void time_syscall_mb(void) {
     struct timespec ts;
     syscall(CLOCK_GETTIME_SYSCALL_NR, CLOCK_MONOTONIC, &ts);
 }
 #endif
 
+/**
+ * time_libc_mb
+ *
+ * Microbenchmark function that invokes clock_gettime via libc.
+ * This typically uses the vDSO if available, which is faster than a direct syscall.
+ */
 static void time_libc_mb(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
 }
 
+/**
+ * getpid_syscall_mb
+ *
+ * Microbenchmark function that invokes the getpid syscall directly.
+ * Used as a baseline for a simple syscall.
+ */
 static void getpid_syscall_mb(void) {
     syscall(__NR_getpid);
 }
 
+/**
+ * mmap_mb
+ *
+ * Microbenchmark function that maps a file into memory, copies data, and unmaps it.
+ * Used to measure the performance of mmap-based file access.
+ */
 static void mmap_mb(void) {
     int fd = open(TEST_READ_PATH, O_RDONLY);
     int len = TEST_READ_LEN;
@@ -75,6 +107,12 @@ static void mmap_mb(void) {
     close(fd);
 }
 
+/**
+ * file_mb
+ *
+ * Microbenchmark function that reads data from a file using the read() syscall.
+ * Used to measure the performance of read-based file access.
+ */
 static void file_mb(void) {
     int fd = open(TEST_READ_PATH, O_RDONLY);
     long len = TEST_READ_LEN;
@@ -86,6 +124,18 @@ static void file_mb(void) {
     close(fd);
 }
 
+/**
+ * run_bench_ns
+ *
+ * Runs a benchmark for a specific implementation function.
+ * Calculates the best average execution time per call over multiple rounds.
+ *
+ * @param inner_call The function pointer to the microbenchmark to run.
+ * @param calls The number of calls to perform per loop.
+ * @param loops The number of loops to perform per round.
+ * @param rounds The number of rounds to execute.
+ * @return The best average execution time in nanoseconds.
+ */
 static long run_bench_ns(bench_impl inner_call, int calls, int loops, int rounds) {
     long best_ns1 = LONG_MAX;
     struct timespec req = {0, 125000000}; /* 125ms delay */
@@ -124,10 +174,29 @@ static long run_bench_ns(bench_impl inner_call, int calls, int loops, int rounds
     return best_ns1;
 }
 
+/**
+ * default_arg
+ *
+ * Returns a default value if the argument provided is -1.
+ *
+ * @param arg The argument value to check.
+ * @param def The default value to return if arg is -1.
+ * @return The argument value or the default value.
+ */
 static int default_arg(int arg, int def) {
     return arg == -1 ? def : arg;
 }
 
+/**
+ * bench_time
+ *
+ * Runs benchmarks related to time retrieval syscalls (clock_gettime, getpid).
+ * Compares direct syscalls (if supported) against libc implementations.
+ *
+ * @param calls Number of calls per loop (overridden if -1).
+ * @param loops Number of loops per round (overridden if -1).
+ * @param rounds Number of rounds (overridden if -1).
+ */
 static void bench_time(int calls, int loops, int rounds) {
     calls = default_arg(calls, 100000);
     loops = default_arg(loops, 32);
@@ -153,6 +222,15 @@ static void bench_time(int calls, int loops, int rounds) {
     printf("    libc:\t%ld ns\n", best_ns_libc);
 }
 
+/**
+ * bench_file
+ *
+ * Runs benchmarks related to file I/O (mmap vs read).
+ *
+ * @param calls Number of calls per loop (overridden if -1).
+ * @param loops Number of loops per round (overridden if -1).
+ * @param rounds Number of rounds (overridden if -1).
+ */
 static void bench_file(int calls, int loops, int rounds) {
     calls = default_arg(calls, 100);
     loops = default_arg(loops, 128);
@@ -178,6 +256,13 @@ static struct option long_options[] = {
         {0, 0, 0, 0}
 };
 
+/**
+ * print_help
+ *
+ * Prints the help message describing the program usage and options, then exits.
+ *
+ * @param prog_name The name of the program (usually argv[0]).
+ */
 static void print_help(char *prog_name) {
     printf("Usage: %s [options]\n"
            "\n"
@@ -194,6 +279,19 @@ static void print_help(char *prog_name) {
     exit(1);
 }
 
+/**
+ * parse_args
+ *
+ * Parses command-line arguments and updates the configuration variables.
+ *
+ * @param argc The argument count.
+ * @param argv The argument vector.
+ * @param do_time Pointer to boolean flag for time benchmark.
+ * @param do_file Pointer to boolean flag for file benchmark.
+ * @param calls Pointer to integer for number of calls.
+ * @param loops Pointer to integer for number of loops.
+ * @param rounds Pointer to integer for number of rounds.
+ */
 static void parse_args(int argc, char **argv, bool *do_time, bool *do_file, int *calls, int *loops, int *rounds) {
     while (1) {
         int c = getopt_long(argc, argv, short_options, long_options, NULL);
@@ -233,6 +331,16 @@ static void parse_args(int argc, char **argv, bool *do_time, bool *do_file, int 
     }
 }
 
+/**
+ * main
+ *
+ * The main entry point of the callbench utility.
+ * Parses arguments and executes the selected benchmarks.
+ *
+ * @param argc The argument count.
+ * @param argv The argument vector.
+ * @return Returns 0 on successful execution.
+ */
 int main(int argc, char** argv) {
     bool do_time = 1;
     bool do_file = 1;

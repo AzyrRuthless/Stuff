@@ -26,6 +26,14 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+/**
+ * BUG_ON
+ *
+ * Utility macro that checks a condition. If the condition is true, it prints
+ * an error message and exits the program.
+ *
+ * @param condition The condition to check.
+ */
 #define BUG_ON(condition) do { \
 	if (condition) { \
 		fprintf(stderr, "Bug on: %s\n", #condition); \
@@ -47,6 +55,13 @@ struct thread_data {
 static int loops = LOOPS_DEFAULT;
 static bool threaded = false;
 
+/**
+ * print_usage
+ *
+ * Prints the usage information for the program, including available options.
+ *
+ * @param prog_name The name of the program (usually argv[0]).
+ */
 static void print_usage(const char *prog_name) {
 	printf("Usage: %s [options]\n", prog_name);
 	printf("Options:\n");
@@ -54,6 +69,14 @@ static void print_usage(const char *prog_name) {
 	printf("  -T, --threaded          Use threads instead of processes\n");
 }
 
+/**
+ * parse_options
+ *
+ * Parses command-line arguments to configure the benchmark.
+ *
+ * @param argc The number of command-line arguments.
+ * @param argv The array of command-line arguments.
+ */
 static void parse_options(int argc, char **argv) {
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--loop") == 0) {
@@ -73,6 +96,14 @@ static void parse_options(int argc, char **argv) {
 	}
 }
 
+/**
+ * get_mono_time
+ *
+ * Gets the current time from the CLOCK_MONOTONIC clock.
+ * Exits on failure.
+ *
+ * @param ts Pointer to a timespec structure to store the time.
+ */
 static void get_mono_time(struct timespec *ts) {
 	if (clock_gettime(CLOCK_MONOTONIC, ts) == -1) {
 		perror("clock_gettime");
@@ -80,6 +111,15 @@ static void get_mono_time(struct timespec *ts) {
 	}
 }
 
+/**
+ * worker_thread
+ *
+ * The worker function that performs the pipe operations.
+ * It alternates between reading and writing to simulate ping-pong communication.
+ *
+ * @param __tdata Pointer to the thread data structure.
+ * @return NULL.
+ */
 static void *worker_thread(void *__tdata) {
 	struct thread_data *td = (struct thread_data *)__tdata;
 	int m = 0;
@@ -104,6 +144,16 @@ static void *worker_thread(void *__tdata) {
 	return NULL;
 }
 
+/**
+ * main
+ *
+ * The main entry point of the pipe-latency benchmark.
+ * Sets up the pipes and threads/processes, runs the benchmark, and reports the results.
+ *
+ * @param argc The number of command-line arguments.
+ * @param argv The array of command-line arguments.
+ * @return Returns 0 on success.
+ */
 int main(int argc, char **argv) {
 	struct thread_data threads[2];
 	int pipe_1[2], pipe_2[2];

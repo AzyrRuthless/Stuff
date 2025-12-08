@@ -47,25 +47,32 @@ static float version = 0.40;
 
 static volatile int done = 0;
 
+/**
+ * sigint
+ *
+ * Signal handler for SIGINT (Ctrl+C).
+ * Sets the global 'done' flag to 1, indicating the program should terminate.
+ *
+ * @param n The signal number (unused).
+ */
 static void sigint(int n)
 {
 	(void)n;
 	done = 1;
 }
 
-/*
- * Turn a 64 int into SI or pseudo-SI units ("nunit" based).
- * Two decimal places.
+/**
+ * unitify
  *
- * In:  64 bit int, a storage buffer, size of buffer, and unit base
- * unit base squared must fit in unsigned long.
+ * Turns a 64-bit integer into a human-readable string with SI or pseudo-SI units.
+ * Supports units like k, M, G, T, P, E.
  *
- * Out: buffer is changed and a pointer is returned to it.
- *
- * NOTE: Bits are lost if
- * 1) Input > (2^64 / 100)
- * *and*
- * 2) nunit < 100       (which it should never be)
+ * @param _in The input number to convert.
+ * @param buf The buffer to store the resulting string.
+ * @param max The size of the buffer.
+ * @param nunit The unit base (e.g., 1000 or 1024).
+ * @param dounit Whether to use units (1) or raw numbers (0).
+ * @return A pointer to the buffer containing the formatted string.
  */
 static char *unitify(u_int64_t _in, char *buf, int max, unsigned long nunit,
 		     int dounit)
@@ -111,11 +118,16 @@ static char *unitify(u_int64_t _in, char *buf, int max, unsigned long nunit,
 	return buf;
 }
 
-/*
- * Return a string representation of time differance.
+/**
+ * time_diff
  *
- * In:  Start and end time, a storage buffer and size of it.
- * Out: buffer is changed and a pointer is returned to it.
+ * Calculates the time difference between two timeval structures and formats it as a string.
+ *
+ * @param start The start time.
+ * @param end The end time.
+ * @param buf The buffer to store the resulting string.
+ * @param max The size of the buffer.
+ * @return A pointer to the buffer containing the formatted string.
  */
 static char *time_diff(struct timeval *start, struct timeval *end, char *buf,
 		       int max)
@@ -136,8 +148,10 @@ static char *time_diff(struct timeval *start, struct timeval *end, char *buf,
 	return buf;
 }
 
-/* spoon?
+/**
+ * usage
  *
+ * Prints the usage information for pipebench.
  */
 static void usage(void)
 {
@@ -147,8 +161,15 @@ static void usage(void)
 	       "[ -s <file> | -S <file> ]\\\n           | ...\n");
 }
 
-/*
+/**
  * main
+ *
+ * The main entry point of the pipebench utility.
+ * Measures and reports the speed of data transfer through stdin/stdout.
+ *
+ * @param argc The argument count.
+ * @param argv The argument vector.
+ * @return Returns 0 on success, 1 on failure.
  */
 int main(int argc, char **argv)
 {

@@ -16,7 +16,14 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-/* Utility macro for error checking */
+/**
+ * CHECK_PTR
+ *
+ * Utility macro to check if a pointer is NULL. If it is, prints an error
+ * message using perror and exits the program with status 1.
+ *
+ * @param ptr The pointer to check.
+ */
 #define CHECK_PTR(ptr) do { \
     if (ptr == NULL) { \
         perror("Allocation failed"); \
@@ -24,6 +31,16 @@
     } \
 } while (0)
 
+/**
+ * main
+ *
+ * The main entry point of the heap-test utility.
+ * It demonstrates memory allocation behavior by performing standard allocation,
+ * zero-initialized allocation, and reallocation, while printing the addresses
+ * and the program break (sbrk) before and after allocations.
+ *
+ * @return Returns 0 on successful execution.
+ */
 int main(void) {
     printf("PID: %d\n", getpid());
 
