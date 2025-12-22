@@ -41,6 +41,9 @@ jobs:
         $CC $FLAGS -o $OUT/pipebench pipebench/pipebench.c
         $CC $FLAGS -o $OUT/callbench callbench/callbench.c
         $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
+        
+        # Added syscall check
+        $CC $FLAGS -o $OUT/syscall-check syscall/syscall.c
 
         $STRIP $OUT/*
 
@@ -58,6 +61,9 @@ jobs:
         $CC $FLAGS -o $OUT/callbench callbench/callbench.c
         $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
 
+        # Added syscall check
+        $CC $FLAGS -o $OUT/syscall-check syscall/syscall.c
+
         $STRIP $OUT/*
 
     - name: Compile for Desktop Linux
@@ -72,6 +78,9 @@ jobs:
         $CC $FLAGS -o $OUT/pipebench pipebench/pipebench.c
         $CC $FLAGS -o $OUT/callbench callbench/callbench.c
         $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
+
+        # Added syscall check
+        $CC $FLAGS -o $OUT/syscall-check syscall/syscall.c
 
         $STRIP $OUT/*
 
