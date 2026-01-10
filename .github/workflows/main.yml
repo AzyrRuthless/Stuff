@@ -41,9 +41,8 @@ jobs:
         $CC $FLAGS -o $OUT/pipebench pipebench/pipebench.c
         $CC $FLAGS -o $OUT/callbench callbench/callbench.c
         $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
-        
-        # Added syscall check
         $CC $FLAGS -o $OUT/syscall-check syscall/syscall.c
+        $CC $FLAGS -o $OUT/ksu_profile ksuprofile/ksu_profile.c
 
         $STRIP $OUT/*
 
@@ -60,9 +59,8 @@ jobs:
         $CC $FLAGS -o $OUT/pipebench pipebench/pipebench.c
         $CC $FLAGS -o $OUT/callbench callbench/callbench.c
         $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
-
-        # Added syscall check
         $CC $FLAGS -o $OUT/syscall-check syscall/syscall.c
+        $CC $FLAGS -o $OUT/ksu_profile ksuprofile/ksu_profile.c
 
         $STRIP $OUT/*
 
@@ -78,9 +76,8 @@ jobs:
         $CC $FLAGS -o $OUT/pipebench pipebench/pipebench.c
         $CC $FLAGS -o $OUT/callbench callbench/callbench.c
         $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
-
-        # Added syscall check
         $CC $FLAGS -o $OUT/syscall-check syscall/syscall.c
+        $CC $FLAGS -o $OUT/ksu_profile ksuprofile/ksu_profile.c
 
         $STRIP $OUT/*
 
