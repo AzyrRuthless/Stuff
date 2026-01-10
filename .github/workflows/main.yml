@@ -1,20 +1,15 @@
-name: Build Tools (Android & Desktop)
+name: Build Tools (Android Only)
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-all:
+  build-android:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
-
-    - name: Install Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential
 
     - name: Setup Android NDK
       uses: nttld/setup-ndk@v1
@@ -26,8 +21,12 @@ jobs:
       run: |
         mkdir -p build/android-arm64
         mkdir -p build/android-arm32
-        mkdir -p build/linux-desktop
+        mkdir -p build/android-x64
+        mkdir -p build/android-x86
 
+    # ---------------------------------------------------------
+    # ANDROID ARM64 (aarch64)
+    # ---------------------------------------------------------
     - name: Compile for Android ARM64
       run: |
         NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
@@ -46,6 +45,9 @@ jobs:
 
         $STRIP $OUT/*
 
+    # ---------------------------------------------------------
+    # ANDROID ARM32 (armv7a)
+    # ---------------------------------------------------------
     - name: Compile for Android ARM32
       run: |
         NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
@@ -64,12 +66,16 @@ jobs:
 
         $STRIP $OUT/*
 
-    - name: Compile for Desktop Linux
+    # ---------------------------------------------------------
+    # ANDROID x64 (x86_64)
+    # ---------------------------------------------------------
+    - name: Compile for Android x64
       run: |
-        CC="gcc"
-        STRIP="strip"
-        FLAGS="-O3 -Wall -Wextra" 
-        OUT="build/linux-desktop"
+        NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
+        CC="$NDK_BIN/clang"
+        STRIP="$NDK_BIN/llvm-strip"
+        FLAGS="--target=x86_64-linux-android21 -fPIE -pie -O3 -Wall -Wextra"
+        OUT="build/android-x64"
 
         $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
         $CC $FLAGS -pthread -o $OUT/pipe-latency pipe-latency/pipe-latency.c
@@ -81,12 +87,37 @@ jobs:
 
         $STRIP $OUT/*
 
+    # ---------------------------------------------------------
+    # ANDROID x86 (i686)
+    # ---------------------------------------------------------
+    - name: Compile for Android x86
+      run: |
+        NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
+        CC="$NDK_BIN/clang"
+        STRIP="$NDK_BIN/llvm-strip"
+        FLAGS="--target=i686-linux-android21 -fPIE -pie -O3 -Wall -Wextra"
+        OUT="build/android-x86"
+
+        $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
+        $CC $FLAGS -pthread -o $OUT/pipe-latency pipe-latency/pipe-latency.c
+        $CC $FLAGS -o $OUT/pipebench pipebench/pipebench.c
+        $CC $FLAGS -o $OUT/callbench callbench/callbench.c
+        $CC $FLAGS -pthread -o $OUT/hackbench hackbench/hackbench.c
+        $CC $FLAGS -o $OUT/syscall-check syscall/syscall.c
+        $CC $FLAGS -o $OUT/ksu_profile ksuprofile/ksu_profile.c
+
+        $STRIP $OUT/*
+
+    # ---------------------------------------------------------
+    # CHECKSUMS & ARTIFACTS
+    # ---------------------------------------------------------
     - name: Generate Checksums
       run: |
         cd build
         sha256sum android-arm64/* > android-arm64/SHA256SUMS.txt
         sha256sum android-arm32/* > android-arm32/SHA256SUMS.txt
-        sha256sum linux-desktop/* > linux-desktop/SHA256SUMS.txt
+        sha256sum android-x64/* > android-x64/SHA256SUMS.txt
+        sha256sum android-x86/* > android-x86/SHA256SUMS.txt
 
     - name: Upload Android ARM64 Artifacts
       uses: actions/upload-artifact@v4
@@ -102,9 +133,16 @@ jobs:
         path: build/android-arm32/*
         retention-days: 5
 
-    - name: Upload Linux Desktop Artifacts
+    - name: Upload Android x64 Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: tools-linux-desktop
-        path: build/linux-desktop/*
+        name: tools-android-x64
+        path: build/android-x64/*
+        retention-days: 5
+
+    - name: Upload Android x86 Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tools-android-x86
+        path: build/android-x86/*
         retention-days: 5
