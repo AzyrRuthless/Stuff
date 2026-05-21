@@ -32,7 +32,7 @@ jobs:
         NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
         CC="$NDK_BIN/clang"
         STRIP="$NDK_BIN/llvm-strip"
-        FLAGS="--target=aarch64-linux-android36 -fPIE -pie -O3 -Wall -Wextra"
+        FLAGS="--target=aarch64-linux-android35 -fPIE -pie -O3 -Wall -Wextra"
         OUT="build/android-arm64"
 
         $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
@@ -53,7 +53,7 @@ jobs:
         NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
         CC="$NDK_BIN/clang"
         STRIP="$NDK_BIN/llvm-strip"
-        FLAGS="--target=armv7a-linux-androideabi36 -fPIE -pie -O3 -Wall -Wextra"
+        FLAGS="--target=armv7a-linux-androideabi35 -fPIE -pie -O3 -Wall -Wextra"
         OUT="build/android-arm32"
 
         $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
@@ -74,7 +74,7 @@ jobs:
         NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
         CC="$NDK_BIN/clang"
         STRIP="$NDK_BIN/llvm-strip"
-        FLAGS="--target=x86_64-linux-android36 -fPIE -pie -O3 -Wall -Wextra"
+        FLAGS="--target=x86_64-linux-android35 -fPIE -pie -O3 -Wall -Wextra"
         OUT="build/android-x64"
 
         $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
@@ -95,7 +95,7 @@ jobs:
         NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
         CC="$NDK_BIN/clang"
         STRIP="$NDK_BIN/llvm-strip"
-        FLAGS="--target=i686-linux-android36 -fPIE -pie -O3 -Wall -Wextra"
+        FLAGS="--target=i686-linux-android35 -fPIE -pie -O3 -Wall -Wextra"
         OUT="build/android-x86"
 
         $CC $FLAGS -o $OUT/heap-test brk/heap-test.c
